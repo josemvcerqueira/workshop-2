@@ -1,3 +1,5 @@
-export const PACKAGE_ID = "";
+export const PACKAGE_ID =
+  "0x81d946aac21c23f5b59fd6913d0336fe515aaa080668a19750163e2b9f76479c";
 
-export const HOUSE_ID = "";
+export const HOUSE_ID =
+  "0x0a6e376317d2b4782101995e2118c112f8d7c0b36c8147685eca1bd8ad21cd29";

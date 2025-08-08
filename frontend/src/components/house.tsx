@@ -4,16 +4,19 @@ import { HOUSE_ID } from "../constants";
 import { pathOr } from "ramda";
 import { formatSui } from "../utils";
 
-const error = new Error("test");
-const isPending = false;
-const data = null;
-
 export function House() {
+  const { data, error, isLoading } = useSuiClientQuery("getObject", {
+    id: HOUSE_ID,
+    options: {
+      showContent: true,
+    },
+  });
+
   if (error) {
     return <Flex>Error: {error.message}</Flex>;
   }
 
-  if (isPending || !data) {
+  if (isLoading || !data) {
     return <Flex>Loading...</Flex>;
   }
 

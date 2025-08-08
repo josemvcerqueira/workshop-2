@@ -14,17 +14,17 @@ app.use(express.json());
 const nodeClient = createSuiClient(process.env.KEY);
 const gasClient = new GasStationClient(process.env.KEY);
 
-export const PACKAGE_ID = '';
-
-export const HOUSE_ID = '';
-
 export const executeTransaction = async (transaction, senderSig) => {};
 
 app.post('/sponsorTx', async (req, res, next) => {
   try {
+    const sponsorTx = await gasClient.sponsorTransaction(req.body.txBytes);
+
+    console.log(sponsorTx);
+
     res.json({
-      txBytes: '',
-      sponsorSig: '', // not needed by FE when BE submits, but easy to pass back and forth
+      txBytes: sponsorTx.txBytes,
+      sponsorSig: sponsorTx.signature,
     });
   } catch (err) {
     next(err);
@@ -33,6 +33,15 @@ app.post('/sponsorTx', async (req, res, next) => {
 
 app.post('/executeSponsoredTx', async (req, res, next) => {
   try {
+    const result = await nodeClient.executeTransactionBlock({
+      transactionBlock: req.body.txBytes,
+      signature: req.body.signature,
+      options: {
+        showEvents: true,
+      },
+    });
+
+    res.json(result);
   } catch (err) {
     next(err);
   }
