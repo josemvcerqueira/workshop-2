@@ -40,33 +40,76 @@ public struct Flip has copy, drop {
 // === Initialize === 
 
 fun init(ctx: &mut TxContext) {
-    abort
+    let admin = Admin {
+        id: object::new(ctx)
+    };
+
+    transfer::public_transfer(admin, ctx.sender());
+
+    let house = House {
+        id: object::new(ctx),
+        fee: FEE_RATE,
+        max: MAX_BET,
+        pool: balance::zero(),
+        treasury: balance::zero(),
+    };
+
+    transfer::share_object(house);
 }
 
-public fun add(house: &mut House, deposit: Coin<SUI>) {
-    abort
+public fun add(house: &mut House, deposit: Coin<SUI>, _: &mut TxContext) {
+    house.pool.join(deposit.into_balance());
 }
 
 entry fun flip(house: &mut House, random: &Random, mut bet: Coin<SUI>, ctx: &mut TxContext) {
-    abort
+    let amount_in = bet.value();
+
+    assert!(amount_in <= house.max, EInvalidBet);
+
+    let fee = calculate_fee(house, amount_in);
+
+    let amount_in_after_fee = amount_in - fee;
+
+    let mut gen = random.new_generator(ctx);
+
+    let result = gen.generate_bool();
+
+    house.treasury.join(bet.split(fee, ctx).into_balance());
+
+    let winning_amount = amount_in_after_fee * 2;
+
+    house.pool.join(bet.into_balance());
+    
+    if (result) {
+        let payout = house.pool.split(winning_amount).into_coin(ctx);
+
+        transfer::public_transfer(payout, ctx.sender());
+    };
+
+    emit(Flip {
+        result,
+        amount_in,
+        amount_out: if (result) winning_amount else 0,
+        fee,
+    });
 }
 
 // === Admin Functions ===
 
 public fun remove(house: &mut House, _: &Admin, value: u64, ctx: &mut TxContext): Coin<SUI> {
-    abort
+    house.treasury.split(value).into_coin(ctx)
 }
 
 public fun set_max(house: &mut House, _: &Admin, max: u64) {
-    abort
+    house.max = max;
 }
 
 public fun set_fee(house: &mut House, _: &Admin, fee: u128) {
-    abort
+    house.fee = fee;
 }
 
 // === Private Functions === 
 
 fun calculate_fee(house: &House, amount: u64): u64 {
-    abort
+    (((amount as u128) * house.fee).divide_and_round_up(BASIS_POINTS)) as u64
 }
