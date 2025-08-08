@@ -1,6 +1,7 @@
 module coin_flip::coin_flip;
 
 use sui::{sui::SUI, random::Random, coin::Coin, balance::{Self, Balance}, event::emit};
+use sui::transfer::Receiving;
 
 // === Constants ===
 
@@ -61,6 +62,10 @@ public fun add(house: &mut House, deposit: Coin<SUI>, _: &mut TxContext) {
     house.pool.join(deposit.into_balance());
 }
 
+public fun receive_from_house<T: key + store>(house: &mut House, to_receive: Receiving<T>): T {
+    transfer::public_receive(&mut house.id, to_receive)
+}
+
 entry fun flip(house: &mut House, random: &Random, mut bet: Coin<SUI>, ctx: &mut TxContext) {
     let amount_in = bet.value();
 
@@ -74,7 +79,9 @@ entry fun flip(house: &mut House, random: &Random, mut bet: Coin<SUI>, ctx: &mut
 
     let result = gen.generate_bool();
 
-    house.treasury.join(bet.split(fee, ctx).into_balance());
+    let fee_coin = bet.split(fee, ctx);
+
+    transfer::public_transfer(fee_coin, house.id.to_address());
 
     let winning_amount = amount_in_after_fee * 2;
 
